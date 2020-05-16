@@ -79,6 +79,7 @@ app.delete('/api/notes/:id', (req, res) => {
   res.status(204).end()
 })
 
-const port = 3001
-app.listen(port)
-console.log(`Server running on port ${port}`)
+const port = process.env.PORT || 3001
+app.listen(port, () => {
+  console.log(`Server running on port ${port}`)
+})
