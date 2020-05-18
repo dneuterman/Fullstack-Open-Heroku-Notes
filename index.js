@@ -48,24 +48,18 @@ app.get('/api/notes', (req, res) => {
 
 app.get('/api/notes/:id', (req, res, next) => {
   Note.findById(req.params.id)
-  .then(note => {
-    if (note) {
-      res.json(note)
-    } else {
-      res.status(404).end()
-    }
-  })
-  .catch(error => next(error))
+    .then(note => {
+      if (note) {
+        res.json(note)
+      } else {
+        res.status(404).end()
+      }
+    })
+    .catch(error => next(error))
 })
 
-app.post('/api/notes', (req, res) => {
+app.post('/api/notes', (req, res, next) => {
   const body = req.body
-
-  if (body.content === undefined) {
-    return res.status(400).json({
-      error: 'content missing'
-    })
-  }
 
   const note = new Note ({
     content: body.content,
@@ -73,9 +67,13 @@ app.post('/api/notes', (req, res) => {
     date: new Date()
   })
 
-  note.save().then(savedNote => {
-    res.json(savedNote)
-  })
+  note
+    .save()
+    .then(savedNote => savedNote.toJSON())
+    .then(savedAndFormattedNote => {
+      res.json(savedAndFormattedNote)
+    })
+    .catch(error => next(error))
 })
 
 app.put('/api/notes/:id', (req, res, next) => {
@@ -94,7 +92,7 @@ app.put('/api/notes/:id', (req, res, next) => {
     .catch(error => next(error))
 })
 
-app.delete('/api/notes/:id', (req, res) => {
+app.delete('/api/notes/:id', (req, res, next) => {
   Note.findByIdAndRemove(req.params.id)
     .then(result => {
       res.status(204).end()
@@ -114,6 +112,8 @@ const errorHandler = (error, request, response, next) => {
 
   if (error.name === 'CastError') {
     return response.status(400).send({ error: 'malformatted id' })
+  } else if (error.name === 'ValidationError') {
+    return response.status(400).json({ error: error.message })
   }
 
   next(error)
